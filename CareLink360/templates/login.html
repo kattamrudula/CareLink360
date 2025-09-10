@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Login - CareLink360{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-heartbeat login-icon"></i>
+            <h2>Welcome to CareLink360</h2>
+            <p>Secure Healthcare Information Management</p>
+            <p>powered by <strong>Descope</strong></p>  
+        </div>
+        
+        <div class="login-form">
+            <descope-wc
+                    project-id="P32JjSg4n7i1kB84jnyGzAzjZjcr"
+                    flow-id="sign-up-or-in"
+                    theme="light"
+                ></descope-wc>
+            
+            <!-- Demo login button for testing
+            <div class="demo-section">
+                <hr class="divider">
+                <p class="demo-text">For demonstration purposes:</p>
+                <button class="btn demo-btn" onclick="demoLogin()">
+                    <i class="fas fa-user-md"></i> Demo Login as Dr. Smith
+                </button>
+            </div> -->
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <i class="fas fa-shield-alt"></i>
+                <span>Secure Authentication</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-cloud"></i>
+                <span>Multi-Cloud Integration</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-search-plus"></i>
+                <span>Advanced File Search</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script src="https://unpkg.com/@descope/web-component@latest/dist/index.js"></script>
+    
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .login-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8));
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 450px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .login-header {
+        margin-bottom: 30px;
+    }
+
+    .login-icon {
+        font-size: 3rem;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 15px;
+    }
+
+    .login-header h2 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+
+    .login-header p {
+        color: #666;
+        font-size: 1rem;
+    }
+
+    .login-form {
+        margin-bottom: 30px;
+    }
+
+    .descope-container {
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 15px;
+        margin-bottom: 20px;
+        border: 2px dashed rgba(102, 126, 234, 0.2);
+    }
+
+    .demo-section {
+        margin-top: 20px;
+    }
+
+    .divider {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+        margin: 20px 0;
+    }
+
+    .demo-text {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+
+    .demo-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #28a745, #20c997);
+    }
+
+    .demo-btn:hover {
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    }
+
+    .features {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .feature {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: #667eea;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .feature i {
+        font-size: 1.5rem;
+        color: #764ba2;
+    }
+
+    @media (max-width: 768px) {
+        .login-card {
+            margin: 20px;
+            padding: 30px 20px;
+        }
+        
+        .features {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .feature {
+            flex-direction: row;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+   const descopeWc = document.querySelector('descope-wc');
+        
+        if (descopeWc) {
+            descopeWc.addEventListener('success', (e) => {
+                const { detail } = e;
+                
+                // Send authentication data to Flask backend
+                fetch('/auth/callback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: detail.user?.userId,
+                        email: detail.user?.email,
+                        name: detail.user?.name,
+                        sessionToken: detail.sessionJwt,  // This is the session JWT
+                        refreshToken: detail.refreshJwt  
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        showMessage('Login successful! Redirecting...', 'success');
+                        setTimeout(() => {
+                            window.location.href = "/connections";
+                        }, 1000);
+                    } else {
+                        showMessage('Authentication failed. Please try again.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Auth callback error:', error);
+                    showMessage('Something went wrong. Please try again.', 'error');
+                });
+            });
+            
+            descopeWc.addEventListener('error', (e) => {
+                console.error('Descope error:', e.detail);
+                showMessage('Authentication error. Please try again.', 'error');
+            });
+        }
+        
+        function showMessage(message, type) {
+            // Create message element
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            
+            // Add to page
+            const container = document.querySelector('.container');
+            container.insertBefore(messageDiv, container.firstChild);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+</script>
+{% endblock %}

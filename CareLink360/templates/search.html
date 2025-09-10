@@ -1,0 +1,760 @@
+{% extends "base.html" %}
+
+{% block title %}Search - CareLink360{% endblock %}
+
+{% block content %}
+<div class="search-page">
+    <div class="page-header">
+        <h2><i class="fas fa-search"></i> Healthcare File Search</h2>
+        <p>Search across all connected healthcare data sources</p>
+    </div>
+
+    <div class="search-container">
+        <div class="search-box">
+            <div class="search-input-group">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Search for X-rays, prescriptions, lab reports, MRI scans..."
+                    class="search-input"
+                >
+                <button id="searchBtn" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <div class="search-filters">
+                <select id="fileTypeFilter" class="filter-select">
+                    <option value="">All File Types</option>
+                    <option value="image">Images (X-rays, MRI, CT Scans)</option>
+                    <option value="pdf">PDFs (Reports, Prescriptions)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="searchProgress" class="search-progress" style="display: none;">
+            <div class="progress-header">
+                <i class="fas fa-sync fa-spin"></i>
+                <span>Searching across connected storages...</span>
+            </div>
+            <div class="storage-search-list" id="storageSearchList">
+                <!-- Dynamic storage search indicators will be added here -->
+            </div>
+        </div>
+
+        <div id="searchResults" class="search-results" style="display: none;">
+            <div class="results-header">
+                <h3 id="resultsCount">0 files found</h3>
+                <div class="results-actions">
+                    <button id="clearSearch" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear Search
+                    </button>
+                </div>
+            </div>
+            <div id="fileGrid" class="file-grid">
+                <!-- Search results will be populated here -->
+            </div>
+        </div>
+
+        <div id="noConnections" class="no-connections">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>No Storage Connections</h3>
+            <p>Connect to your healthcare data sources to start searching for files.</p>
+            <a href="{{ url_for('connections') }}" class="btn">
+                <i class="fas fa-plug"></i> Go to Connections
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- File Preview Modal -->
+<div id="fileModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalFileName">File Preview</h3>
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="modalLoading" class="modal-loading">
+                <div class="loading-animation">
+                    <i class="fas fa-download fa-spin"></i>
+                    <p>Coonecting to <span id="modalStorageName">storage</span> using Descope Outbound app token and fetching file ...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="modalPreview" class="modal-preview" style="display: none;">
+                <!-- File preview content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .search-page {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .page-header h2 {
+        font-size: 2.2rem;
+        color: #333;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+
+    .page-header h2 i {
+        color: #667eea;
+        margin-right: 10px;
+    }
+
+    .page-header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .search-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .search-box {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+
+    .search-input-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 15px 20px;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        border-radius: 50px;
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .search-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        background: white;
+    }
+
+    .search-btn {
+        padding: 15px 25px;
+        border-radius: 50px;
+        font-size: 1rem;
+    }
+
+    .search-filters {
+        display: flex;
+        gap: 15px;
+    }
+
+    .filter-select {
+        padding: 10px 15px;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        border-radius: 25px;
+        background: rgba(255, 255, 255, 0.8);
+        color: #333;
+        font-size: 0.9rem;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .filter-select:focus {
+        border-color: #667eea;
+        background: white;
+    }
+
+    .search-progress {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .progress-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #667eea;
+    }
+
+    .storage-search-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .storage-search-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 10px 20px;
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 25px;
+        transition: all 0.3s ease;
+    }
+
+    .storage-search-item.searching {
+        background: rgba(102, 126, 234, 0.2);
+        border-left: 4px solid #667eea;
+    }
+
+    .storage-search-item.completed {
+        background: rgba(40, 167, 69, 0.1);
+        border-left: 4px solid #28a745;
+    }
+
+    .search-results {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .results-header h3 {
+        color: #333;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    .file-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .file-card {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .file-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .file-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+
+    .file-info h4 {
+        color: #333;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        word-break: break-word;
+    }
+
+    .file-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+    .file-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .file-meta-item i {
+        width: 12px;
+        color: #667eea;
+    }
+
+    .storage-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-top: 10px;
+    }
+
+    .no-connections {
+        text-align: center;
+        padding: 60px 40px;
+        color: #666;
+    }
+
+    .no-connections i {
+        font-size: 4rem;
+        color: #667eea;
+        margin-bottom: 20px;
+    }
+
+    .no-connections h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+    }
+
+    .no-connections p {
+        margin-bottom: 25px;
+        font-size: 1.1rem;
+    }
+
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 20px;
+        max-width: 90vw;
+        max-height: 90vh;
+        width: 800px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 25px 30px;
+        border-bottom: 1px solid #eee;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+    }
+
+    .modal-header h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        transition: background 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-body {
+        flex: 1;
+        overflow: auto;
+        position: relative;
+    }
+
+    .modal-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 40px;
+        color: #667eea;
+    }
+
+    .loading-animation i {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        color: #667eea;
+    }
+
+    .loading-animation p {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+
+    .progress-bar {
+        width: 300px;
+        height: 6px;
+        background: rgba(102, 126, 234, 0.2);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        width: 0%;
+        animation: progressFill 3s ease-out forwards;
+        border-radius: 3px;
+    }
+
+    @keyframes progressFill {
+        to { width: 100%; }
+    }
+
+    .modal-preview {
+        padding: 30px;
+        text-align: center;
+    }
+
+    .modal-preview img {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-preview iframe {
+        width: 100%;
+        height: 500px;
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 768px) {
+        .search-filters {
+            flex-direction: column;
+        }
+        
+        .results-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        
+        .file-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .modal-content {
+            width: 95vw;
+            height: 90vh;
+        }
+        
+        .modal-header {
+            padding: 20px;
+        }
+        
+        .modal-preview {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let connectedStorages = [];
+    let currentSearchQuery = '';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadConnectedStorages();
+        
+        const searchBtn = document.getElementById('searchBtn');
+        const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearch');
+
+        searchBtn.addEventListener('click', performSearch);
+        clearBtn.addEventListener('click', clearSearch);
+        
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('fileModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    });
+
+    async function loadConnectedStorages() {
+        try {
+            const response = await fetch('/get_connected_storages');
+            const data = await response.json();
+            
+            connectedStorages = data.storages || [];
+            
+            if (connectedStorages.length === 0) {
+                document.getElementById('noConnections').style.display = 'block';
+                document.querySelector('.search-box').style.display = 'none';
+            } else {
+                document.getElementById('noConnections').style.display = 'none';
+                document.querySelector('.search-box').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Failed to load connected storages:', error);
+        }
+    }
+
+    async function performSearch() {
+        const query = document.getElementById('searchInput').value.trim();
+        const fileType = document.getElementById('fileTypeFilter').value;
+        
+        if (!query) {
+            alert('Please enter a search term');
+            return;
+        }
+
+        currentSearchQuery = query;
+        
+        // Show search progress
+        showSearchProgress();
+        
+        // Simulate searching across storages
+        await simulateStorageSearch();
+        
+        // Perform actual search
+        try {
+            const response = await fetch('/search_files', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    query: query,
+                    file_type: fileType
+                })
+            });
+
+            const data = await response.json();
+            displaySearchResults(data.files || []);
+        } catch (error) {
+            console.error('Search failed:', error);
+            displaySearchResults([]);
+        }
+    }
+
+    function showSearchProgress() {
+        document.getElementById('searchProgress').style.display = 'block';
+        document.getElementById('searchResults').style.display = 'none';
+        
+        const storageList = document.getElementById('storageSearchList');
+        storageList.innerHTML = '';
+        
+        connectedStorages.forEach(storage => {
+            const item = document.createElement('div');
+            item.className = 'storage-search-item';
+            item.innerHTML = `
+                <i class="fas fa-clock"></i>
+                <span>Searching ${storage}...</span>
+            `;
+            storageList.appendChild(item);
+        });
+    }
+
+    async function simulateStorageSearch() {
+        const items = document.querySelectorAll('.storage-search-item');
+        
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            
+            // Mark as searching
+            item.classList.add('searching');
+            item.innerHTML = `
+                <i class="fas fa-sync fa-spin"></i>
+                <span>Searching ${connectedStorages[i]}...</span>
+            `;
+            
+            // Wait for animation effect
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // Mark as completed
+            item.classList.remove('searching');
+            item.classList.add('completed');
+            item.innerHTML = `
+                <i class="fas fa-check"></i>
+                <span>Searched ${connectedStorages[i]}</span>
+            `;
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        // Hide progress after a short delay
+        setTimeout(() => {
+            document.getElementById('searchProgress').style.display = 'none';
+        }, 500);
+    }
+
+    function displaySearchResults(files) {
+        const resultsContainer = document.getElementById('searchResults');
+        const fileGrid = document.getElementById('fileGrid');
+        const resultsCount = document.getElementById('resultsCount');
+        
+        resultsCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''} found`;
+        
+        if (files.length === 0) {
+            fileGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; color: #667eea;"></i>
+                    <h3>No files found</h3>
+                    <p>Try adjusting your search terms or connecting more storage sources.</p>
+                </div>
+            `;
+        } else {
+            fileGrid.innerHTML = files.map(file => `
+                <div class="file-card" onclick="openFilePreview('${file.name}', '${file.type}', '${file.storage}', '${file.preview_url}')">
+                    <div class="file-icon">
+                        <i class="fas fa-${file.type === 'pdf' ? 'file-pdf' : 'image'}"></i>
+                    </div>
+                    <div class="file-info">
+                        <h4>${file.name}</h4>
+                        <div class="file-meta">
+                            <div class="file-meta-item">
+                                <i class="fas fa-weight-hanging"></i>
+                                <span>${file.size}</span>
+                            </div>
+                            <div class="file-meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>${file.modified}</span>
+                            </div>
+                        </div>
+                        <div class="storage-badge">${file.storage}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        resultsContainer.style.display = 'block';
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('fileTypeFilter').value = '';
+        document.getElementById('searchResults').style.display = 'none';
+        document.getElementById('searchProgress').style.display = 'none';
+        currentSearchQuery = '';
+    }
+
+    function openFilePreview(fileName, fileType, storage, previewUrl) {
+        const modal = document.getElementById('fileModal');
+        const modalFileName = document.getElementById('modalFileName');
+        const modalStorageName = document.getElementById('modalStorageName');
+        const modalLoading = document.getElementById('modalLoading');
+        const modalPreview = document.getElementById('modalPreview');
+        
+        // Set modal content
+        modalFileName.textContent = fileName;
+        modalStorageName.textContent = storage;
+        
+        // Show modal and loading state
+        modal.style.display = 'flex';
+        modalLoading.style.display = 'block';
+        modalPreview.style.display = 'none';
+        
+        // Reset progress bar
+        const progressFill = modal.querySelector('.progress-fill');
+        progressFill.style.animation = 'none';
+        progressFill.offsetHeight; // Trigger reflow
+        progressFill.style.animation = 'progressFill 3s ease-out forwards';
+        
+        // Simulate loading delay and show preview
+        setTimeout(() => {
+            modalLoading.style.display = 'none';
+            modalPreview.style.display = 'block';
+            
+            if (fileType === 'image') {
+                modalPreview.innerHTML = `
+                    <img src="${previewUrl}" alt="${fileName}" style="max-width: 100%; max-height: 500px; border-radius: 10px;">
+                    <div style="margin-top: 20px; color: #666;">
+                        <p><strong>File:</strong> ${fileName}</p>
+                        <p><strong>Source:</strong> ${storage}</p>
+                        <p><strong>Type:</strong> Medical Image</p>
+                    </div>
+                `;
+            } else if (fileType === 'pdf') {
+                modalPreview.innerHTML = `
+                    <div style="border: 2px dashed #667eea; padding: 40px; border-radius: 10px; color: #667eea;">
+                        <i class="fas fa-file-pdf" style="font-size: 4rem; margin-bottom: 20px;"></i>
+                        <h3>PDF Preview</h3>
+                        <p style="margin: 15px 0;">This would show the PDF content in a production environment.</p>
+                        <p><strong>File:</strong> ${fileName}</p>
+                        <p><strong>Source:</strong> ${storage}</p>
+                        <button class="btn" style="margin-top: 20px;">
+                            <i class="fas fa-download"></i> Download PDF
+                        </button>
+                    </div>
+                `;
+            }
+        }, 3000);
+    }
+
+    function closeModal() {
+        document.getElementById('fileModal').style.display = 'none';
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+</script>
+{% endblock %}
