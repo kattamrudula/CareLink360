@@ -1,6 +1,6 @@
 ### **Project Description: CareLink 360**
 
-**Project Title:** CareLink 360: A Unified, Intelligent Healthcare Information Portal 
+**Project Title:** CareLink 360: A Unified, Secured, Intelligent Healthcare Information Portal 
 
 🏥 **Problem Statement**
 
