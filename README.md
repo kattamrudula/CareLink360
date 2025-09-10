@@ -2,11 +2,11 @@
 
 **Project Title:** CareLink 360: A Unified, Intelligent Healthcare Information Portal 
 
-** 🏥 Problem Statement**
+🏥 **Problem Statement**
 
 In the modern healthcare ecosystem, critical patient information—such as X-rays, diagnostic reports, and prescriptions—is often siloed across disparate systems and cloud storage services (e.g., OneDrive, Google Drive, AWS S3). This fragmentation creates significant hurdles for medical professionals and patients, impeding timely access to vital health data, hindering collaborative care, and slowing down diagnostic processes. The absence of a centralized, secure, and user-friendly platform for accessing and managing this scattered information is a critical challenge. 
 
-** 🌐 Solution**
+🌐 **Solution**
 
 CareLink 360 is a web-based application designed to solve this problem by providing a secure, single-pane-of-glass solution for searching, viewing, and managing healthcare content. Our platform integrates with various cloud storage services and hospital databases, creating a unified portal for healthcare professionals, patients, and administrators. 
 
@@ -19,6 +19,6 @@ CareLink 360 is a web-based application designed to solve this problem by provid
   
 <img width="1019" height="523" alt="Screenshot 2025-09-10 at 4 41 52 PM" src="https://github.com/user-attachments/assets/006395f2-c147-48ae-83e0-ce5aa88abc7c" />
 
-** 🌟 Impact and Vision**
+🌟 **Impact and Vision**
 
 CareLink 360 aims to streamline data access for the healthcare industry, reducing administrative overhead and improving the quality of patient care. By centralizing information and leveraging AI agents for intelligent data discovery, we can help doctors make faster, more informed decisions. In the future, we plan to expand the functionality to include AI-driven diagnostic assistance and automated report generation, further solidifying CareLink 360 as an indispensable tool for healthcare professionals worldwide. 
