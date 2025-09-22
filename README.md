@@ -68,3 +68,6 @@ Enable seamless information sharing among multidisciplinary care teams, improvin
 Provide patients with a comprehensive and accessible view of their health records, fostering greater engagement in their own care.
 
 Our long-term vision extends beyond data aggregation. We plan to integrate advanced AI capabilities for diagnostic assistance, predictive analytics for disease progression, and automated report generation, further solidifying CareLink 360 as an indispensable and transformative tool for healthcare professionals and patients worldwide. This project represents a crucial step towards a more connected, intelligent, and patient-centric future in healthcare.
+
+
+Demo link : https://youtu.be/TiL1eZKXiWI
